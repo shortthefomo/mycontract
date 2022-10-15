@@ -1,7 +1,10 @@
+'use strict'
+
 const HotPocket = require('hotpocket-nodejs-contract')
 const lib = require('xrpl-accountlib')
 const axios = require('axios')
 const stats = require('stats-analysis')
+const decimal = require('decimal.js')
 const { XrplClient } = require('xrpl-client')
 
 const Binance = class Binance {
@@ -148,7 +151,7 @@ const mycontract = async (ctx) => {
                 const info = await client.send(request_info)
 
                 if ('error' in info) {
-                    console.log('ACCPUNT INFO ERROR', error)
+                    console.log('ACCOUNT INFO ERROR', error)
                     return 
                 }
 
@@ -161,7 +164,7 @@ const mycontract = async (ctx) => {
                     LimitAmount: {
                         currency: 'USD',
                         issuer: process.env.XRPL_DESTINATION_ACCOUNT,
-                        value: String(data.filteredMedian)
+                        value: new decimal(data.filteredMedian).toFixed(8)
                     },
                     Sequence: info.account_data.Sequence,
                     Memos: Memos
@@ -170,9 +173,11 @@ const mycontract = async (ctx) => {
                 console.log('SIGN & SUBMIT')
                 try {
                     console.log('Tx', Tx)
-                    Signed = lib.sign(Tx, lib.derive.familySeed(process.env.XRPL_SOURCE_ACCOUNT_SECRET))
+                    const keypair = lib.derive.familySeed(process.env.XRPL_SOURCE_ACCOUNT_SECRET)
+                    const {signedTransaction} = lib.sign(Tx, keypair)
+                    console.log('signedTransaction', signedTransaction)
+                    Signed = await client.send({ command: 'submit', 'tx_blob': signedTransaction })
                     console.log('Signed', Signed)
-                    const submit = await client.send({ command: 'submit', 'tx_blob': Signed })
                     console.log({ Signed })
                 } catch (e) {
                     console.log(`Error signing / submitting: ${e.message}`)

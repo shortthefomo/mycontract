@@ -9,7 +9,9 @@
         "@vercel/ncc": "0.34.0",
         "axios": "^1.1.2",
         "debug": "^4.3.4",
+        "decimal.js": "^10.4.2",
         "hotpocket-nodejs-contract": "0.5.6",
+        "stats-analysis": "^2.0.0",
         "xrpl-accountlib": "^1.5.2",
         "xrpl-client": "^1.9.5"
     }
