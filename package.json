@@ -2,6 +2,7 @@
     "name": "mycontract",
     "version": "1.0.0",
     "scripts": {
+        "test": "node src/text.js",
         "build": "npx ncc build src/mycontract.js -o dist",
         "start": "npm run build && hpdevkit deploy dist"
     },

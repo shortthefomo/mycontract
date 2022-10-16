@@ -131,30 +131,13 @@ const mycontract = async (ctx) => {
                 console.log('XRPL_SOURCE_ACCOUNT', process.env.XRPL_SOURCE_ACCOUNT)
                 console.log('GOT DATA', data)
 
-                let Signed = null
-                const Memos =  {
-                    Memo: {
-                        MemoData: Buffer.from(JSON.stringify(data.rawResultsNamed), 'utf-8').toString('hex').toUpperCase(),
-                        MemoFormat: Buffer.from('text/csv', 'utf-8').toString('hex').toUpperCase(),
-                        MemoType: Buffer.from('rates:' + JSON.stringify(data.rawResults), 'utf-8').toString('hex').toUpperCase()
-                    }
-                }
-                console.log('Memos', Memos)
-                const request_info = {
-                    'id': 3,
-                    'command': 'account_info',
-                    'account': process.env.XRPL_SOURCE_ACCOUNT,
-                    'ledger_index': 'current',
-                    'queue': true
-                }
-                
-                const info = await client.send(request_info)
+                let Signed = null                
+                const { account_data } = await client.send({ command: 'account_info', account: process.env.XRPL_SOURCE_ACCOUNT })
 
-                if ('error' in info) {
-                    console.log('ACCOUNT INFO ERROR', error)
+                if ('error' in account_data) {
+                    console.log('ACCOUNT DATA ERROR', account_data.error)
                     return 
                 }
-
 
                 const Tx = {
                     TransactionType: 'TrustSet',
@@ -166,27 +149,28 @@ const mycontract = async (ctx) => {
                         issuer: process.env.XRPL_DESTINATION_ACCOUNT,
                         value: new decimal(data.filteredMedian).toFixed(8)
                     },
-                    Sequence: info.account_data.Sequence,
-                    Memos: Memos
+                    Sequence: account_data.Sequence,
+                    Memos: [{
+                        Memo: {
+                            MemoData: Buffer.from(JSON.stringify(data.rawResultsNamed), 'utf-8').toString('hex').toUpperCase(),
+                            MemoFormat: Buffer.from('text/csv', 'utf-8').toString('hex').toUpperCase(),
+                            MemoType: Buffer.from('rates:' + JSON.stringify(data.rawResults), 'utf-8').toString('hex').toUpperCase()
+                        }
+                    }]
                 }
 
                 console.log('SIGN & SUBMIT')
                 try {
-                    console.log('Tx', Tx)
                     const keypair = lib.derive.familySeed(process.env.XRPL_SOURCE_ACCOUNT_SECRET)
                     const {signedTransaction} = lib.sign(Tx, keypair)
-                    console.log('signedTransaction', signedTransaction)
                     Signed = await client.send({ command: 'submit', 'tx_blob': signedTransaction })
-                    console.log('Signed', Signed)
                     console.log({ Signed })
                 } catch (e) {
                     console.log(`Error signing / submitting: ${e.message}`)
                 }
 
                 console.log('WRAP UP')
-                //(await Connection).close()
-
-                // user.send(JSON.stringify(Signed))
+                process.exit(0)
             }
             user.send(`Thanks for talking to me!`)
         }
