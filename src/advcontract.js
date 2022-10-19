@@ -80,7 +80,7 @@ const accountSetup = async (ctx) => {
     return await setupAccount
 }
 
-const signContract = async (receipt, familySeed, unlSize) => {
+const signContract = async (signers, receipt, familySeed, unlSize) => {
     const client = new XrplClient(process.env.ENDPOINT)
 
     const { account_data } = await client.send({ command: 'account_info', account: process.env.XRPL_SOURCE_ACCOUNT })
@@ -91,6 +91,8 @@ const signContract = async (receipt, familySeed, unlSize) => {
         Account: process.env.XRPL_SOURCE_ACCOUNT,
         Fee: String((unlSize + 1) + 40), // (n +1) * fee
         Flags: 131072,
+        SignerQuorum: unlSize,
+        SignerEntries: signers,
         LimitAmount: {
             currency: 'USD',
             issuer: process.env.XRPL_DESTINATION_ACCOUNT,
@@ -106,7 +108,7 @@ const signContract = async (receipt, familySeed, unlSize) => {
         }]
     }
     console.log('Tx', Tx)
-    
+
     // console.log('contract address', familySeed.address)
     const { signedTransaction } = lib.sign(Tx, familySeed.signAs(String(familySeed.address)))
     client.close()
@@ -142,13 +144,13 @@ const myContract = async (ctx) => {
                     Object.assign(a, {
                         [b.pubkey]: b.aggregator.filteredMedian
                     })
-                    
+
                     return a
                 }, {})
 
                 const contractsRawMedian = stats.median(valuesMedian)
                 const contractsRawStdev = stats.stdev(valuesMedian)
-                const contractsResults = filter(valuesMedian, contractsRawMedian, contractsRawStdev) 
+                const contractsResults = filter(valuesMedian, contractsRawMedian, contractsRawStdev)
                 const contractsMedian = stats.median(contractsResults)
                 // const contractsMean = stats.mean(contractsResults)
                 return {
@@ -174,8 +176,8 @@ const myContract = async (ctx) => {
             }
 
 
-            let timer = setTimeout(() => {
-                clearTimeout(timer)
+            let timerCon = setTimeout(() => {
+                clearTimeout(timerCon)
                 aggCompleted = true
                 // If we've received less than what we expect, throw error.
                 if (contracts.length < unlSize)
@@ -190,23 +192,18 @@ const myContract = async (ctx) => {
                         const obj = JSON.parse(msg.toString())
                         if (obj.key === 'contract') {
                             contracts.push(obj)
-                            //console.log('pushging ', obj)
                             if (contracts.length === unlSize) {
-                                clearTimeout(timer)
+                                clearTimeout(timerCon)
                                 aggCompleted = true
                                 resolve(getMax())
                             }
                         }
                     }
-                } catch( error) {
-
+                } catch (error) {
+                    console.log('aggCompleted error', error)
                 }
             })
         })
-
-        
-
-        
 
         await ctx.unl.send(JSON.stringify({
             key: 'contract',
@@ -222,62 +219,60 @@ const myContract = async (ctx) => {
         console.log('Decided Random No.:', receipt.max)
         console.log('Oracle data:', receipt.filtered)
 
-        // hold up a bit... 
-        // await pause(1000)
-
-
-        console.log('sending payload for signing')
-
-        let signCompleted = false        
-        const collectSignaters = new Promise((resolve, reject) => {
+        let signCompleted = false
+        const collectSignatures = new Promise((resolve, reject) => {
             const signatures = []
 
-            let timer = setTimeout(() => {
-                console.log('collectSignaters timed out')
-                clearTimeout(timer)
+            let timerSig = setTimeout(() => {
+                // console.log('collectSignaters timed out')
+                clearTimeout(timerSig)
                 signCompleted = true
                 // If we've received less than what we expect, throw error.
                 if (signatures.length < unlSize)
                     reject(`Insufficient signatures. ${signatures.length} < ${unlSize}`)
                 else
                     resolve(signatures)
-            }, Math.ceil(timeoutMs / 2))
+            }, Math.ceil(timeoutMs))
 
             ctx.unl.onMessage((node, msg) => {
                 if (!signCompleted) {
                     try {
                         const obj = JSON.parse(msg.toString())
                         if (obj.key === 'signed') {
-                            signatures.push( {signedTransaction: obj.signedTransaction})
-
+                            const signedTransaction = obj.signedTransaction
+                            signatures.push({ signedTransaction })
+                            console.log('incomming signedTransaction', signedTransaction)
                             if (signatures.length === unlSize) {
                                 console.log('collectSignaters all sig collected')
-                                clearTimeout(timer)
+                                clearTimeout(timerSig)
                                 signCompleted = true
                                 resolve(signatures)
                             }
                         }
                     } catch (error) {
                         console.log('collectSignaters error', error)
-                    }    
+                    }
                 }
             })
         })
-        
-        const sig = {
+
+        await ctx.unl.send(JSON.stringify({
             key: 'signed',
-            signedTransaction: await signContract(receipt, familySeed, unlSize)
+            signedTransaction: sig
+        }))
+
+        // hold up a bit... 
+        await pause(1000)
+        const signatures = await collectSignatures.catch(error => {
+            console.log('Insufficient nodes signed, elvis left the building.')
+            return
+        })
+
+        console.log('signatures', signatures)
+        if (signatures.length == unlSize) {
+            console.log('sending payload for signing')
+            const sig = await signContract(receipt, familySeed, unlSize)
         }
-        console.log('sending...', sig)
-        
-
-        
-        await ctx.unl.send(JSON.stringify(sig))
-
-        const signed = await collectSignaters
-        console.log('signatures', signed)
-        
-        
 
         // const active_contract = await activeContract(ctx, contracts, receipt)
         // console.log('active_contract', active_contract)
@@ -289,7 +284,7 @@ const myContract = async (ctx) => {
 }
 
 const pause = (milliseconds = 500) => {
-    return new Promise(resolve => {setTimeout(resolve, milliseconds)})
+    return new Promise(resolve => { setTimeout(resolve, milliseconds) })
 }
 
 const aggregateData = (async () => {
@@ -322,8 +317,8 @@ const aggregateData = (async () => {
     const raw = {
         rawResultsNamed,
         rawResults,
-        rawMedian: new decimal(rawMedian).toFixed(8) *1,
-        rawStdev: new decimal(rawStdev).toFixed(8) *1
+        rawMedian: new decimal(rawMedian).toFixed(8) * 1,
+        rawStdev: new decimal(rawStdev).toFixed(8) * 1
     }
 
     // console.log(raw)
@@ -333,14 +328,14 @@ const aggregateData = (async () => {
         rawStdev = new decimal(0.00000001).toFixed(8)
     }
 
-    const filteredResults = filter(rawResults, rawMedian, rawStdev) 
+    const filteredResults = filter(rawResults, rawMedian, rawStdev)
     const filteredMedian = stats.median(filteredResults)
     const filteredMean = stats.mean(filteredResults)
 
     const filtered = {
         filteredResults,
-        filteredMedian: new decimal(filteredMedian).toFixed(8) *1,
-        filteredMean: new decimal(filteredMean).toFixed(8) *1
+        filteredMedian: new decimal(filteredMedian).toFixed(8) * 1,
+        filteredMean: new decimal(filteredMean).toFixed(8) * 1
     }
 
     // console.log(filtered)
@@ -362,7 +357,7 @@ const filter = (rawResults, rawMedian, rawStdev) => {
 
         // console.log('abs', abs)
         if (new decimal(abs).lessThanOrEqualTo(d.toFixed(8))) {
-            results.push(r.toFixed(8)*1)
+            results.push(r.toFixed(8) * 1)
         }
     }
 
