@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "scripts": {
         "test": "node src/text.js",
-        "build": "npx ncc build src/mycontract.js -o dist",
+        "build": "npx ncc build src/advcontract.js -o dist",
         "start": "npm run build && hpdevkit deploy dist"
     },
     "dependencies": {
@@ -11,9 +11,11 @@
         "axios": "^1.1.2",
         "debug": "^4.3.4",
         "decimal.js": "^10.4.2",
+        "flagnames": "^1.0.4",
+        "fs": "^0.0.1-security",
         "hotpocket-nodejs-contract": "0.5.6",
         "stats-analysis": "^2.0.0",
-        "xrpl-accountlib": "^1.5.2",
+        "xrpl-accountlib": "^1.5.3",
         "xrpl-client": "^1.9.5"
     }
 }

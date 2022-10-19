@@ -2,6 +2,12 @@
     "contract": {
         "bin_path": "/usr/bin/node",
         "bin_args": "index.js",
-        "environment": "XRPL_SOURCE_ACCOUNT=r9RKDc1BnRhrzwG2yQ37cFTujtsCwDq5Pi ENDPOINT=wss://hooks-testnet-v2.xrpl-labs.com XRPL_SOURCE_ACCOUNT_SECRET=shABwZkWSSgU66NsTWvhWiA9GCWRa XRPL_DESTINATION_ACCOUNT=r3Z4Ky5rRKtMUP19Tpfjh1uaHRFAXZRnn5"
+        "environment": "ENDPOINT=wss://hooks-testnet-v2.xrpl-labs.com XRPL_SOURCE_ACCOUNT=r9RKDc1BnRhrzwG2yQ37cFTujtsCwDq5Pi XRPL_DESTINATION_ACCOUNT=r3Z4Ky5rRKtMUP19Tpfjh1uaHRFAXZRnn5 REST_EXCHANGE_TIMEOUT=1000",
+        "consensus": {
+            "mode": "public",
+            "roundtime": 4000,
+            "stage_slice": 25,
+            "threshold": 80
+        }
     }    
 }
