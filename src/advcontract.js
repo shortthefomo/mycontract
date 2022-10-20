@@ -91,7 +91,7 @@ const signContract = async (receipt, familySeed, unlSize) => {
     const Tx = {
         TransactionType: 'TrustSet',
         Account: process.env.XRPL_SOURCE_ACCOUNT,
-        Fee: String((unlSize + 1) + 40), // (n +1) * fee
+        Fee: String((unlSize + 1) * 10), // (n +1) * fee
         Flags: 131072,
         SignerQuorum: unlSize,
         SignerEntries: receipt.signers,
