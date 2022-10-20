@@ -94,24 +94,7 @@ const signContract = async (receipt, familySeed, unlSize) => {
         Fee: String((unlSize + 1) + 40), // (n +1) * fee
         Flags: 131072,
         SignerQuorum: unlSize,
-        SignerEntries: [{
-            SignerEntry: {
-                Account: receipt.signers[0],
-                SignerWeight: 1
-            }
-        }, 
-        {
-            SignerEntry: {
-                Account: receipt.signers[1],
-                SignerWeight: 1
-            }
-        },
-        {
-            SignerEntry: {
-                Account: receipt.signers[2],
-                SignerWeight: 1
-            }
-        }],
+        SignerEntries: receipt.signers,
         LimitAmount: {
             currency: 'USD',
             issuer: process.env.XRPL_DESTINATION_ACCOUNT,
@@ -214,7 +197,12 @@ const myContract = async (ctx) => {
                         const obj = JSON.parse(msg.toString())
                         if (obj.key === 'contract') {
                             contracts.push(obj)
-                            signers.push(obj.address)
+                            signers.push({
+                                SignerEntry: {
+                                    Account: obj.address,
+                                    SignerWeight: 1
+                                }
+                            })
                             if (contracts.length === unlSize) {
                                 clearTimeout(timerCon)
                                 aggCompleted = true
