@@ -76,6 +76,7 @@ const accountSetup = async (ctx) => {
 
         const rawdata = fs.readFileSync(keyFile).toString()
         const accountData = JSON.parse(rawdata)
+        // derive the object again as needed references are lost when converted to JSON
         resolve(lib.derive.familySeed(accountData.secret.familySeed))
     })
     return await setupAccount
