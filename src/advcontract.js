@@ -142,7 +142,7 @@ const myContract = async (ctx) => {
         const timeoutMs = hpconfig.consensus.roundtime
 
         const min = 0
-        const max = 2
+        const max = unlSize - 1
         const random = Math.floor(Math.random() * (max - min + 1)) + min
 
         const aggregator = await aggregateData()
