@@ -242,7 +242,7 @@ const myContract = async (ctx) => {
             const signatures = []
 
             let timerSig = setTimeout(() => {
-                // console.log('collectSignaters timed out')
+                console.log('collectSignaters timed out')
                 clearTimeout(timerSig)
                 signCompleted = true
                 // If we've received less than what we expect, throw error.
