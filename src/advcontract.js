@@ -277,8 +277,9 @@ const myContract = async (ctx) => {
             signedTransaction: payload
         }))
 
-        // hold up a bit... 
-        await pause(1000)
+        // hold up a bit... dunno not worked
+        // await pause(1000)
+
         const signatures = await collectSignatures.catch(error => {
             console.log('Insufficient nodes signed, elvis left the building.')
             return
