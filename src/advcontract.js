@@ -64,6 +64,7 @@ const Providers = {
 
 const accountSetup = async (ctx) => {
     const setupAccount = new Promise((resolve, reject) => {
+        // store in ../ as that directory is no part of consensue for hotpocket and not shared across the network
         const keyFile = '../' + ctx.publicKey + '-key.json'
         if (!fs.existsSync(keyFile)) {
             const familySeed = lib.generate.familySeed()
