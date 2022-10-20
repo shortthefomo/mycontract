@@ -80,7 +80,7 @@ const accountSetup = async (ctx) => {
     return await setupAccount
 }
 
-const signContract = async (signers, receipt, familySeed, unlSize) => {
+const signContract = async (receipt, familySeed, unlSize) => {
     const client = new XrplClient(process.env.ENDPOINT)
 
     const { account_data } = await client.send({ command: 'account_info', account: process.env.XRPL_SOURCE_ACCOUNT })
@@ -92,7 +92,24 @@ const signContract = async (signers, receipt, familySeed, unlSize) => {
         Fee: String((unlSize + 1) + 40), // (n +1) * fee
         Flags: 131072,
         SignerQuorum: unlSize,
-        SignerEntries: signers,
+        SignerEntries: [{
+            SignerEntry: {
+                Account: receipt.signers[0],
+                SignerWeight: 1
+            }
+        }, 
+        {
+            SignerEntry: {
+                Account: receipt.signers[1],
+                SignerWeight: 1
+            }
+        },
+        {
+            SignerEntry: {
+                Account: receipt.signers[2],
+                SignerWeight: 1
+            }
+        }],
         LimitAmount: {
             currency: 'USD',
             issuer: process.env.XRPL_DESTINATION_ACCOUNT,
@@ -130,11 +147,13 @@ const myContract = async (ctx) => {
 
         const aggregator = await aggregateData()
 
-        const contracts = []
         let aggCompleted = false
 
         // Start listening to incoming NPL messages before we send ours.
         const consensus = new Promise((resolve, reject) => {
+            const contracts = []
+            const signers = []
+
             function getFilteredMedian() {
                 const valuesMedian = contracts.reduce((a, b) => a.concat(b.aggregator.filteredMedian), [])
                 const valuesNamed = contracts.reduce((a, b) => {
@@ -171,7 +190,8 @@ const myContract = async (ctx) => {
                 }
                 return {
                     max,
-                    filtered
+                    filtered,
+                    signers
                 }
             }
 
@@ -192,6 +212,7 @@ const myContract = async (ctx) => {
                         const obj = JSON.parse(msg.toString())
                         if (obj.key === 'contract') {
                             contracts.push(obj)
+                            signers.push(obj.address)
                             if (contracts.length === unlSize) {
                                 clearTimeout(timerCon)
                                 aggCompleted = true
@@ -208,6 +229,7 @@ const myContract = async (ctx) => {
         await ctx.unl.send(JSON.stringify({
             key: 'contract',
             value: random,
+            address: familySeed.address,
             aggregator: aggregator
         }))
 
@@ -218,6 +240,10 @@ const myContract = async (ctx) => {
         console.log('receiptreceiptreceipt', receipt)
         console.log('Decided Random No.:', receipt.max)
         console.log('Oracle data:', receipt.filtered)
+
+        console.log('sending payload for signing')
+        const payload = await signContract(receipt, familySeed, unlSize)
+
 
         let signCompleted = false
         const collectSignatures = new Promise((resolve, reject) => {
@@ -258,7 +284,7 @@ const myContract = async (ctx) => {
 
         await ctx.unl.send(JSON.stringify({
             key: 'signed',
-            signedTransaction: sig
+            signedTransaction: payload
         }))
 
         // hold up a bit... 
@@ -269,9 +295,8 @@ const myContract = async (ctx) => {
         })
 
         console.log('signatures', signatures)
-        if (signatures.length == unlSize) {
-            console.log('sending payload for signing')
-            const sig = await signContract(receipt, familySeed, unlSize)
+        if (signatures!= undefined && signatures.length == unlSize) {
+            //todo
         }
 
         // const active_contract = await activeContract(ctx, contracts, receipt)
