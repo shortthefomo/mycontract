@@ -192,6 +192,8 @@ const myContract = async (ctx) => {
             }, Math.ceil(timeoutMs / 2))
 
             ctx.unl.onMessage((node, msg) => {
+                // add guard to check for rouge publickey message
+                if (msg.toString()[0] != '{') { return }
                 try {
                     if (!aggCompleted) {
                         const obj = JSON.parse(msg.toString())
@@ -251,6 +253,8 @@ const myContract = async (ctx) => {
             }, Math.ceil(timeoutMs))
 
             ctx.unl.onMessage((node, msg) => {
+                // add guard to check for rouge publickey message
+                if (msg.toString()[0] != '{') { return }
                 if (!signCompleted) {
                     try {
                         const obj = JSON.parse(msg.toString())
