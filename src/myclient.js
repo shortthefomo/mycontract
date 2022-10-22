@@ -85,12 +85,13 @@ const createSignerList = async (accounts, xrpl) => {
         'command': 'account_objects',
         account: master.address
     })
+    const quorum = (accounts.length > 32) ? 32:accounts.length-1
     const payload = {
         TransactionType: 'SignerListSet',
         Account: master.address,
         Fee: '10',
         Sequence: account_data.Sequence,
-        SignerQuorum: 3,
+        SignerQuorum: quorum,
         SignerEntries: [{
             SignerEntry: {
                 Account: accounts[0],
@@ -141,12 +142,13 @@ const updateSignerList = async (accounts, xrpl) => {
         'command': 'account_objects',
         account: master.address
     })
+    const quorum = (accounts.length > 32) ? 32:accounts.length-1
     const payload = {
         TransactionType: 'SignerListSet',
         Account: master.address,
         Fee: String((3 + 1) * 10), // (n +1) * fee
         Sequence: account_data.Sequence,
-        SignerQuorum: 3,
+        SignerQuorum: quorum,
         SignerEntries: [{
             SignerEntry: {
                 Account: accounts[0],

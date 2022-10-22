@@ -149,6 +149,7 @@ const submitOracleDataToXRPL = async (payload, signatures) => {
         console.log('engine_result', result.engine_result)
     } catch (error) {
         console.log('error submitting signed tx', error)
+        console.log('payload error', payload)
     }
     
     client.close()
