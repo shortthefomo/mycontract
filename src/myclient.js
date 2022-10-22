@@ -50,6 +50,7 @@ const updateSigners = async(accounts, client) => {
         'command': 'account_objects',
         account: process.env.XRPL_SOURCE_ACCOUNT
     })
+    console.log('account_objects', account_objects)
     let updated = false
     if ('SignerList' in account_objects) {
         updated = await updateSignerList(accounts, xrpl)

@@ -132,20 +132,24 @@ const accountSetup = async (ctx) => {
 }
 const submitOracleDataToXRPL = async (payload, signatures) => {
     const client = new XrplClient(process.env.ENDPOINT)
-    const signersEntries = signatures.reduce((a, b) => {
-        a.push({
-            signedTransaction: b
+    try {
+        const signersEntries = signatures.reduce((a, b) => {
+            a.push({
+                signedTransaction: b
+            })
+            return a
+        }, [])
+        const { signedTransaction } = lib.sign(signersEntries)
+    
+        const result = await client.send({
+            command: 'submit',
+            tx_blob: signedTransaction
         })
-        return a
-    }, [])
-    const { signedTransaction } = lib.sign(signersEntries)
-
-    const result = await client.send({
-        command: 'submit',
-        tx_blob: signedTransaction
-    })
-    console.log('result', result)
-    console.log('engine_result', result.engine_result)
+        console.log('result', result)
+        console.log('engine_result', result.engine_result)
+    } catch (error) {
+        console.log('error submitting signed tx', error)
+    }
     
     client.close()
 }
