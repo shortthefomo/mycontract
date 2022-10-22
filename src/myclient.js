@@ -86,30 +86,23 @@ const createSignerList = async (accounts, xrpl) => {
         account: master.address
     })
     const quorum = (accounts.length > 32) ? 32:accounts.length-1
+
+    const signersEntries = accounts.reduce((a, b) => {
+        a.push({
+            SignerEntry: {
+                Account: b,
+                SignerWeight: 1
+            }
+        })
+        return a
+    }, [])
     const payload = {
         TransactionType: 'SignerListSet',
         Account: master.address,
         Fee: '10',
         Sequence: account_data.Sequence,
         SignerQuorum: quorum,
-        SignerEntries: [{
-            SignerEntry: {
-                Account: accounts[0],
-                SignerWeight: 1
-            }
-        }, 
-        {
-            SignerEntry: {
-                Account: accounts[1],
-                SignerWeight: 1
-            }
-        },
-        {
-            SignerEntry: {
-                Account: accounts[2],
-                SignerWeight: 1
-            }
-        }]
+        SignerEntries: signersEntries
     }
     console.log('payload', payload)
     console.log('payload.SignerEntries', payload.SignerEntries)
@@ -142,6 +135,16 @@ const updateSignerList = async (accounts, xrpl) => {
         'command': 'account_objects',
         account: master.address
     })
+
+    const signersEntries = accounts.reduce((a, b) => {
+        a.push({
+            SignerEntry: {
+                Account: b,
+                SignerWeight: 1
+            }
+        })
+        return a
+    }, [])
     const quorum = (accounts.length > 32) ? 32:accounts.length-1
     const payload = {
         TransactionType: 'SignerListSet',
@@ -149,24 +152,7 @@ const updateSignerList = async (accounts, xrpl) => {
         Fee: String((3 + 1) * 10), // (n +1) * fee
         Sequence: account_data.Sequence,
         SignerQuorum: quorum,
-        SignerEntries: [{
-            SignerEntry: {
-                Account: accounts[0],
-                SignerWeight: 1
-            }
-        }, 
-        {
-            SignerEntry: {
-                Account: accounts[1],
-                SignerWeight: 1
-            }
-        },
-        {
-            SignerEntry: {
-                Account: accounts[2],
-                SignerWeight: 1
-            }
-        }]
+        SignerEntries: signersEntries
     }
     console.log('payload', payload)
     console.log('payload.SignerEntries', payload.SignerEntries)
