@@ -78,8 +78,8 @@ const createSignerList = async (accounts, xrpl) => {
         'command': 'account_info',
         account: master.address
     })
-    console.log(flagNames(account_data.LedgerEntryType, account_data.Flags))
-    console.log('account_data', account_data)
+    console.log('flagNames', flagNames(account_data.LedgerEntryType, account_data.Flags))
+    // console.log('account_data', account_data)
 
     const {account_objects} = await xrpl.send({
         'command': 'account_objects',
@@ -105,7 +105,7 @@ const createSignerList = async (accounts, xrpl) => {
         SignerEntries: signersEntries
     }
     console.log('payload', payload)
-    console.log('payload.SignerEntries', payload.SignerEntries)
+    // console.log('payload.SignerEntries', payload.SignerEntries)
     const {signedTransaction} = lib.sign(payload, master)
     const result = await xrpl.send({
         command: 'submit',
@@ -128,8 +128,8 @@ const updateSignerList = async (accounts, xrpl) => {
         'command': 'account_info',
         account: master.address
     })
-    console.log(flagNames(account_data.LedgerEntryType, account_data.Flags))
-    console.log('account_data', account_data)
+    console.log('flagNames', flagNames(account_data.LedgerEntryType, account_data.Flags))
+    // console.log('account_data', account_data)
 
     const {account_objects} = await xrpl.send({
         'command': 'account_objects',
@@ -155,7 +155,7 @@ const updateSignerList = async (accounts, xrpl) => {
         SignerEntries: signersEntries
     }
     console.log('payload', payload)
-    console.log('payload.SignerEntries', payload.SignerEntries)
+    // console.log('payload.SignerEntries', payload.SignerEntries)
     const {signedTransaction} = lib.sign(payload, master)
     const result = await xrpl.send({
         command: 'submit',

@@ -359,8 +359,44 @@ const Kraken = class Kraken {
     }
 }
 
+const Independentreserve = class Independentreserve {
+    async get() {
+        try {
+            const data = await axios.get('https://api.independentreserve.com/Public/GetMarketSummary?primaryCurrencyCode=xrp&secondaryCurrencyCode=usd', { name: 'Independentreserve' }, { timeout: 1000 })
+                .catch(err => {
+                    return undefined
+                })
+            // console.log(data?.data)
+            const XrpUsd = Number(data?.data?.LastPrice) || undefined
+            // console.log(`Kraken, result: ${XrpUsd}`)
+            return XrpUsd
+        } catch (e) {
+            console.log('Error', e.message)
+            return undefined
+        }
+    }
+}
+
+const Bitso = class Bitso {
+    async get() {
+        try {
+            const data = await axios.get('https://api.bitso.com/v3/ticker/?book=xrp_usd', { name: 'Bitso' }, { timeout: 1000 })
+                .catch(err => {
+                    return undefined
+                })
+            // console.log(data?.data)
+            const XrpUsd = Number(data?.data?.payload?.last) || undefined
+            // console.log(`Kraken, result: ${XrpUsd}`)
+            return XrpUsd
+        } catch (e) {
+            console.log('Error', e.message)
+            return undefined
+        }
+    }
+}
+
 const Providers = {
-    class: { Bitstamp, Kraken, FTX, Binance },
+    class: { Bitstamp, Kraken, FTX, Binance, Independentreserve, Bitso },
     instances: {}
 }
 
