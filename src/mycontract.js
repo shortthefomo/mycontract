@@ -76,38 +76,28 @@ const multiNplContract = async (ctx) => {
     const promise1 = getDataset(collection, 'round1', unlSize, timeoutMs)
     await ctx.unl.send(JSON.stringify({ roundName: 'round1', data: data }))
     const dataset1 = await promise1
-    console.log('dataset1', dataset1)
+    console.log('rates', dataset1)
 
     // NPL round 2
     // Subscribe to round 2 messages and then send our message for round 2.
     const promise2 = getDataset(collection, 'round2', unlSize, timeoutMs)
     await ctx.unl.send(JSON.stringify({ roundName: 'round2', data: familySeed.address }))
     const dataset2 = await promise2
-    console.log('dataset2', dataset2)
 
-
-    const signersEntries = dataset2.reduce((a, b) => {
-        a.push({
-            SignerEntry: {
-                Account: b,
-                SignerWeight: 1
-            }
-        })
-        return a
-    }, [])
-    // console.log('signers', signers)
     sendClientsSigners(ctx, dataset2)
-    // console.log('aggregate', aggregate(dataset1))
 
     if (multiSigReady) {
         const payload = await signContract(familySeed, unlSize, aggregate(dataset1))
-        // console.log('payload', payload)
+        if (payload == false) { 
+            console.log('failed to sign payload')
+            return 
+        }
+        // NPL round 3
+        // Subscribe to round 3 messages and then send our message for round 3.
         const promise3 = getDataset(collection, 'round3', unlSize, timeoutMs)
         await ctx.unl.send(JSON.stringify({ roundName: 'round3', data: payload }))
         const dataset3 = await promise3
-        console.log('dataset3', dataset3)
         await submitOracleDataToXRPL(payload, dataset3)
-
     }
 }
 
@@ -148,8 +138,10 @@ const submitOracleDataToXRPL = async (payload, signatures) => {
         console.log('result', result)
         console.log('engine_result', result.engine_result)
     } catch (error) {
-        console.log('error submitting signed tx', error)
-        console.log('payload error', payload)
+        // what happens here is some times the rate value collected does not circulate to all contracts
+        // here the aggreated data in signContract is different and we cause consensus of these signatures 
+        // to be different.
+        console.log('failed submission signatures different')
     }
     
     client.close()
@@ -159,7 +151,20 @@ const signContract = async (familySeed, unlSize, aggregate) => {
     const client = new XrplClient(process.env.ENDPOINT)
 
     const { account_data } = await client.send({ command: 'account_info', account: process.env.XRPL_SOURCE_ACCOUNT })
-    // console.log('account_data', account_data)
+    
+    // guards
+    if (account_data == undefined) {
+        // failed to look up acount data
+        return false
+    }
+    if (!('Sequence' in account_data)) { 
+        console.log('account_data', account_data)
+        return false 
+    }
+    if ('error' in account_data) { 
+        console.log('account_data', account_data)
+        return false 
+    }
 
     const Tx = {
         TransactionType: 'TrustSet',
@@ -180,8 +185,8 @@ const signContract = async (familySeed, unlSize, aggregate) => {
             }
         }]
     }
-    // console.log('Tx', Tx)
-
+    console.log('Tx', Tx)
+    
     // console.log('contract address', familySeed.address)
     const { signedTransaction } = lib.sign(Tx, familySeed.signAs(String(familySeed.address)))
     // console.log('signedTransaction', signedTransaction)
@@ -217,7 +222,7 @@ const sendClientsSigners = async (ctx, signers) => {
     })
     
     for (const user of ctx.users.list()) {
-        console.log({signers: sorted})
+        // console.log({signers: sorted})
         // Loop through inputs sent by the user.
         for (const input of user.inputs) {
             const buffer = await ctx.users.read(input)
