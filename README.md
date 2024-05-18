@@ -4,3 +4,4 @@
 4. `yarn start` in a terminal at project root
 5. `yarn client` in a terminal at project root
 
+to attache to other nodes when logging 1,2,3,4... run `hpdevkit logs 1`

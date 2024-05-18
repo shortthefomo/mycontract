@@ -1,5 +1,5 @@
-const HotPocket = require("hotpocket-nodejs-contract")
-const EventEmitter = require("events")
+const HotPocket = require('hotpocket-nodejs-contract')
+const EventEmitter = require('events')
 const axios = require('axios')
 const datasetEmitter = new EventEmitter()
 const lib = require('xrpl-accountlib')
@@ -73,14 +73,14 @@ const multiNplContract = async (ctx) => {
 
     // NPL round 1
     // Subscribe to round 1 messages and then send our message for round 1.
-    const promise1 = getDataset(collection, 'round1', unlSize, timeoutMs)
+    const promise1 = getDataset(collection, 'round1', unlSize, 1200)
     await ctx.unl.send(JSON.stringify({ roundName: 'round1', data: data }))
     const dataset1 = await promise1
     console.log('rates', dataset1)
 
     // NPL round 2
     // Subscribe to round 2 messages and then send our message for round 2.
-    const promise2 = getDataset(collection, 'round2', unlSize, timeoutMs)
+    const promise2 = getDataset(collection, 'round2', unlSize, 500)
     await ctx.unl.send(JSON.stringify({ roundName: 'round2', data: familySeed.address }))
     const dataset2 = await promise2
 
@@ -94,7 +94,7 @@ const multiNplContract = async (ctx) => {
         }
         // NPL round 3
         // Subscribe to round 3 messages and then send our message for round 3.
-        const promise3 = getDataset(collection, 'round3', unlSize, timeoutMs)
+        const promise3 = getDataset(collection, 'round3', unlSize, 500)
         await ctx.unl.send(JSON.stringify({ roundName: 'round3', data: payload }))
         const dataset3 = await promise3
         await submitOracleDataToXRPL(payload, dataset3)
@@ -139,7 +139,7 @@ const submitOracleDataToXRPL = async (payload, signatures) => {
         console.log('engine_result', result.engine_result)
     } catch (error) {
         // what happens here is some times the rate value collected does not circulate to all contracts
-        // here the aggreated data in signContract is different and we cause consensus of these signatures 
+        // here the aggreated data in signContract is different and will cause consensus of these signatures 
         // to be different.
         console.log('failed submission signatures different')
     }
@@ -240,7 +240,7 @@ const sendClientsSigners = async (ctx, signers) => {
 }
 
 const aggregate = (results) => {
-    const rawResults = results.filter(function (element) { return element !== undefined }) //.reduce((a, b) => a.concat(b), [])
+    const rawResults = results.filter(function (element) { return element !== undefined })
     const rawMedian = stats.median(rawResults)
     let rawStdev = stats.stdev(rawResults)
 
@@ -294,7 +294,8 @@ const filter = (rawResults, rawMedian, rawStdev) => {
     return results
 }
 
-const Binance = class Binance {
+// this one is reallllly slow
+const Binance = class Binance { 
     async get() {
         try {
             const data = await axios.get('https://api.binance.com/api/v3/ticker/price?symbol=XRPUSDT', { name: 'Binance' }, { timeout: 1000 })
@@ -311,23 +312,23 @@ const Binance = class Binance {
     }
 }
 
-const FTX = class FTX {
-    async get() {
-        try {
-            const data = await axios.get('https://ftx.com/api/markets/XRP_USD', { name: 'FTX' }, { timeout: 1000 })
-                .catch(err => {
-                    return undefined
-                })
-            // console.log('data', data?.data?.result)
-            const XrpUsd = Number(data?.data?.result?.price) || undefined
-            // console.log('XrpUsd', XrpUsd)
-            return XrpUsd
-        } catch (e) {
-            console.log('Error', e.message)
-            return undefined
-        }
-    }
-}
+// const FTX = class FTX {
+//     async get() {
+//         try {
+//             const data = await axios.get('https://ftx.com/api/markets/XRP_USD', { name: 'FTX' }, { timeout: 1000 })
+//                 .catch(err => {
+//                     return undefined
+//                 })
+//             // console.log('data', data?.data?.result)
+//             const XrpUsd = Number(data?.data?.result?.price) || undefined
+//             // console.log('XrpUsd', XrpUsd)
+//             return XrpUsd
+//         } catch (e) {
+//             console.log('Error', e.message)
+//             return undefined
+//         }
+//     }
+// }
 
 const Bitstamp = class Bitstamp {
     async get() {
@@ -401,9 +402,9 @@ const Bitso = class Bitso {
 }
 
 const Providers = {
-    class: { Bitstamp, Kraken, FTX, Binance, Independentreserve, Bitso },
+    class: { Bitstamp, Kraken, Independentreserve, Bitso }, //Binance, //FTX
     instances: {}
 }
 
-const hpc = new HotPocket.Contract();
-hpc.init(multiNplContract);
+const hpc = new HotPocket.Contract()
+hpc.init(multiNplContract)

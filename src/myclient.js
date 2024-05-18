@@ -149,7 +149,7 @@ const updateSignerList = async (accounts, xrpl) => {
     const payload = {
         TransactionType: 'SignerListSet',
         Account: master.address,
-        Fee: String((3 + 1) * 10), // (n +1) * fee
+        Fee: String((accounts.length) * 10), // (n +1) * fee
         Sequence: account_data.Sequence,
         SignerQuorum: quorum,
         SignerEntries: signersEntries
